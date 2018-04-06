@@ -18,6 +18,7 @@ class SpaceConsistencyBear(LocalBear):
             file,
             use_spaces: bool,
             allow_trailing_whitespace: bool=False,
+            allow_trailing_blanklines: bool=False,
             indent_size: int=SpacingHelper.DEFAULT_TAB_WIDTH,
             enforce_newline_at_EOF: bool=True):
         '''
@@ -29,6 +30,8 @@ class SpaceConsistencyBear(LocalBear):
             True if spaces are to be used instead of tabs.
         :param allow_trailing_whitespace:
             Whether to allow trailing whitespace or not.
+        :param allow_trailing_blanklines:
+            Whether to allow trailing blanklines at EOF or not.
         :param indent_size:
             Number of spaces per indentation level.
         :param enforce_newline_at_EOF:
@@ -38,7 +41,34 @@ class SpaceConsistencyBear(LocalBear):
         result_texts = []
         additional_info_texts = []
 
-        for line_number, line in enumerate(file, start=1):
+        if not allow_trailing_blanklines:
+            line_nr_start = next(
+                    (i
+                     for i, line in reversed(list(enumerate(file, start=0)))
+                     if line.strip() != ''), -1) + 1
+            if line_nr_start < len(file):
+                additional_info_text = (
+                    'Your source code contains trailing blanklines at EOF.'
+                    'Those usually have no meaning. Please consider'
+                    'removing them.')
+                diff = Diff(file)
+                diff.delete_lines(line_nr_start + 1, len(file))
+                yield Result.from_values(
+                    self,
+                    'Trailing blanklines found.',
+                    diffs={filename: diff},
+                    file=filename,
+                    line=line_nr_start + 1,
+                    column=1,
+                    end_line=len(file),
+                    end_column=len(file[-1]),
+                    additional_info=additional_info_text)
+
+        else :
+            line_nr_start = len(file)
+
+        for line_number, line in enumerate(file[:line_nr_start],
+                                           start=1):
             replacement = line
 
             if enforce_newline_at_EOF:
