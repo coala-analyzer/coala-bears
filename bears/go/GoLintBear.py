@@ -14,7 +14,7 @@ class GoLintBear:  # pragma nt: no cover
     """
     LANGUAGES = {'Go'}
     REQUIREMENTS = {GoRequirement(
-        package='github.com/golang/lint/golint', flag='-u')}
+        package='godoc.org/golang.org/x/lint/golint', flag='-u')}
     AUTHORS = {'The coala developers'}
     AUTHORS_EMAILS = {'coala-devel@googlegroups.com'}
     LICENSE = 'AGPL-3.0'

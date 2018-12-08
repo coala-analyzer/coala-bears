@@ -12,7 +12,7 @@ class GoReturnsBear:  # pragma nt: no cover
     """
     LANGUAGES = {'Go'}
     REQUIREMENTS = {GoRequirement(
-        package='sourcegraph.com/sqs/goreturns', flag='-u')}
+        package='github.com/sqs/goreturns', flag='-u')}
     AUTHORS = {'The coala developers'}
     AUTHORS_EMAILS = {'coala-devel@googlegroups.com'}
     LICENSE = 'AGPL-3.0'
