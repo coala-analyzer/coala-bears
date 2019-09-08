@@ -1,5 +1,6 @@
 import logging
 import unittest
+import unittest.mock
 
 import bears
 import coalib
