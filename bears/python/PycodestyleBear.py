@@ -74,20 +74,22 @@ class PycodestyleBear:
     def process_output(self, output, filename, file):
         if not output:  # backwards compatible no results
             return
-        result = re.match(OUTPUT_REGEX, output)
+        result = re.findall(OUTPUT_REGEX, output)
         if not result:  # backwards compatible no results
             self.warn('{}: Unexpected output {}'.format(filename, output))
             return
-        line, column, message, rule = result.groups()
-        if rule == 'E501':
-            aspect = LineLength('py')
-        else:
-            aspect = None
-        yield Result.from_values(
-            origin='{} ({})'.format(self.name, rule),
-            message=message,
-            file=filename,
-            line=int(line),
-            column=int(column),
-            aspect=aspect,
-            )
+
+        for line, column, message, rule in result:
+            if rule == 'E501':
+                aspect = LineLength('py')
+            else:
+                aspect = None
+
+            yield Result.from_values(
+                origin='{} ({})'.format(self.name, rule),
+                message=message,
+                file=filename,
+                line=int(line),
+                column=int(column),
+                aspect=aspect,
+                )

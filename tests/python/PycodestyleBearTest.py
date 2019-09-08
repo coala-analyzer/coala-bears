@@ -27,6 +27,11 @@ def hello():
     print("hello world")
 '''
 
+multiple_error_file = '''
+y = 10;
+print( 'hello' )
+'''
+
 file_with_very_long_line = ('def ' + 'h' * 1000 + '():\n' +
                             '    print("hello")')
 
@@ -114,3 +119,9 @@ class PycodestyleBearTest(unittest.TestCase):
                                  'E501 line too long (106 > 30 characters)')
                 self.assertEqual(result.origin, 'PycodestyleBear (E501)')
                 self.assertEqual(result.aspect, LineLength('py'))
+
+    def test_multiple_errors(self):
+        content = multiple_error_file.splitlines()
+        with prepare_file(content, None) as (file, fname):
+            with execute_bear(self.uut, fname, file) as results:
+                self.assertTrue(len(results) == 3)
