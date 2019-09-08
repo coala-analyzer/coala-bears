@@ -329,6 +329,10 @@ RadonBear:
   - Python
   - Python 2
   - Python 3
+RequirementsCheckBear:
+  - Python 2 Requirements
+  - Python 3 Requirements
+  - Python Requirements
 RuboCopBear:
   - Ruby
 RubyFastererBear:

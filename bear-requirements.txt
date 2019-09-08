@@ -23,6 +23,7 @@ munkres~=1.1.2
 mypy==0.590
 nbformat~=4.1
 nltk~=3.2
+pip-tools~=3.8.0
 proselint~=0.7.0
 pycodestyle~=2.2
 pydocstyle~=2.0
