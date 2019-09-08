@@ -90,9 +90,15 @@ class JSONFormatBear(LocalBear):
         diff = Diff.from_string_arrays(file, corrected)
 
         if len(diff) > 0:
+            # Appropriate message is displayed to the user based on
+            # json_sort value
+            format_message = ('This file can be reformatted '
+                              'by following indentation.')
+            if json_sort:
+                format_message = ('This file can be reformatted by sorting '
+                                  'keys and following indentation.')
             yield Result(self,
-                         'This file can be reformatted by sorting keys and '
-                         'following indentation.',
+                         format_message,
                          affected_code=tuple(d.range(filename)
                                              for d in diff.split_diff()),
                          diffs={filename: diff})

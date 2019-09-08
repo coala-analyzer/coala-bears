@@ -4,6 +4,7 @@ from bears.js.JSONFormatBear import JSONFormatBear
 from coalib.testing.LocalBearTestHelper import (verify_local_bear,
                                                 LocalBearTestHelper)
 from coalib.results.Result import Result
+from coalib.results.Diff import Diff
 from coalib.settings.Section import Section
 
 
@@ -41,6 +42,12 @@ max_line_length_file1 = '{\n    "string": "' + 'a' * 64 + '"\n}'
 # This will generate a line with 79 characters
 max_line_length_file2 = '{\n    "string": "' + 'a' * 63 + '"\n}'
 
+# This file is for checking the appropriate message displayed
+# to the user based on the json_sort value
+test_file5 = '{\n', '    "a":   5\n', '}\n'
+
+correct_test_file5 = '{\n', '    "a": 5\n', '}\n'
+
 
 class JSONTest(LocalBearTestHelper):
 
@@ -68,6 +75,34 @@ class JSONTest(LocalBearTestHelper):
             [Result.from_values('JSONFormatBear',
                                 'This file is empty.',
                                 file='default')],
+            filename='default')
+
+    def test_format_message_with_sort(self):
+        diff = Diff.from_string_arrays(test_file5, correct_test_file5)
+        self.check_results(
+            self.uut,
+            test_file5,
+            [Result.from_values('JSONFormatBear',
+                                'This file can be reformatted by sorting '
+                                'keys and following indentation.',
+                                file='default',
+                                diffs={'default': diff},
+                                line=2)],
+            settings={'json_sort': True},
+            filename='default')
+
+    def test_format_message_without_sort(self):
+        diff = Diff.from_string_arrays(test_file5, correct_test_file5)
+        self.check_results(
+            self.uut,
+            test_file5,
+            [Result.from_values('JSONFormatBear',
+                                'This file can be reformatted '
+                                'by following indentation.',
+                                file='default',
+                                diffs={'default': diff},
+                                line=2)],
+            settings={'json_sort': False},
             filename='default')
 
 
