@@ -10,6 +10,7 @@ class LineContinuationBear(LocalBear):
             filename,
             file,
             language,
+            ignore_with: bool = False,
             ):
         """
         It is a generic bear which will look for any lines which
@@ -27,6 +28,8 @@ class LineContinuationBear(LocalBear):
             File that needs to be checked in the form of a list of strings.
         :param language:
             Language to be used for finding the line continuation tokens.
+        :param ignore_with:
+            Ignore line continuation operators in with statements.
         """
         try:
             lang = Language[language]
@@ -36,7 +39,7 @@ class LineContinuationBear(LocalBear):
             return
 
         for line_number, line in enumerate(file):
-            if len(line) > 1:
+            if len(line) > 1 and not ignore_with:
                 if line[-2] in line_continuation:
                     if '>>> from ' in line:
                         continue
@@ -48,4 +51,15 @@ class LineContinuationBear(LocalBear):
                         column=len(line) - 1,
                         end_line=line_number + 1,
                         end_column=len(line),
-                        )
+                    )
+            elif len(line) > 1 and ignore_with:
+                if line[-2] in line_continuation and line[:5] != 'with ':
+                    yield Result.from_values(
+                        origin=self,
+                        message='Explicit line continuation is not allowed.',
+                        file=filename,
+                        line=line_number + 1,
+                        column=len(line) - 1,
+                        end_line=line_number + 1,
+                        end_column=len(line),
+                    )

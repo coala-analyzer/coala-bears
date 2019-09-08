@@ -40,6 +40,28 @@ class LineContinuationBearTest(LocalBearTestHelper):
                                 line=1, column=9, end_line=1, end_column=10,
                                 file='default')],
             filename='default')
+        self.check_results(
+            self.uut, ["with open ('hey.txt') as \\",
+                       'heyfile'],
+            [Result.from_values('LineContinuationBear',
+                                'Explicit line continuation is not allowed.',
+                                line=1, column=26, end_line=1, end_column=27,
+                                file='default')],
+            filename='default')
+
+    def test_data_ignore_with(self):
+        self.section.append(Setting('language', 'Python'))
+        self.section.append(Setting('ignore_with', 'true'))
+        self.check_results(
+            self.uut, ['a = 1 + \\', '2'],
+            [Result.from_values('LineContinuationBear',
+                                'Explicit line continuation is not allowed.',
+                                line=1, column=9, end_line=1, end_column=10,
+                                file='default')],
+            filename='default')
+        self.check_validity(
+            self.uut, ["with open('hey.txt') as \\",
+                       'heyfile'])
 
     def test_lang_exception(self):
         self.section.append(Setting('language', 'BlaBlaBla'))
