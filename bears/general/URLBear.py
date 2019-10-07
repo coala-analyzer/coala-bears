@@ -77,7 +77,20 @@ class URLBear(LocalBear):
             https?://                   # http:// or https:// as only these
                                         # are supported by the ``requests``
                                         # library
-            [^.:%\s_/?#[\]@\\]+         # Initial part of domain
+            (                           # Initial part of domain
+                                        # Refer the below link
+                                        # https://en.wikipedia.org/wiki/Hostname
+                                        # for explanation
+                [a-zA-Z]{1, 2}          # Single or double character hostname
+            |
+                [a-zA-Z][0-9]           # Character followed by digit
+            |
+                [0-9][a-zA-Z]           # Digit followed by character
+            |
+                [a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]
+            )                           # Allowing multiple repetitions
+                                        # and hyphen in the hostname
+                                        # but restricting size to 63 octet
             \.                          # A required dot `.`
             (
                 ((?:%[A-Fa-f0-9][A-Fa-f0-9])*[^\s()%\'"`<>|\\\[\]]+)
@@ -100,7 +113,7 @@ class URLBear(LocalBear):
                                         # Thus, the whole part above
                                         # prevents matching of
                                         # Unbalanced parenthesis
-            (?<!\.)(?<!,)               # Exclude trailing `.` or `,` from URL
+            (?<![.,?!-])                # Checking trailing characters
             """, re.VERBOSE)
         file_context = {}
         for line_number, line in enumerate(file):

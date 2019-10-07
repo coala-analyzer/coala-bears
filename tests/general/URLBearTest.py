@@ -37,6 +37,49 @@ class URLBearTest(unittest.TestCase):
                          [3, 'http://www.google.com/404',
                           LINK_CONTEXT.no_context])
 
+    def test_invalid_url(self):
+        invalid_file = """
+        http://(github.com/200
+        http://github].com/200
+        http://github@.com/200
+        http://-github.com/200
+        http://github-.com/200
+        http://github_.com/200
+        http://_github.com/200
+        http://1.com/200
+        http://.com/200
+        """.splitlines()
+
+        with requests_mock.Mocker() as m:
+            m.add_matcher(custom_matcher)
+
+            result = get_results(self.uut, invalid_file)
+            self.assertEqual(result, [])
+
+    def test_termination_of_url(self):
+        valid_file = """
+        http://www.facebook.com/200, http://www.google.com/404.
+        Check out this awesome site http://www.gmail.com/200!
+        Is this url working http://www.gmail.com/404?
+        """.splitlines()
+
+        with requests_mock.Mocker() as m:
+            m.add_matcher(custom_matcher)
+
+            result = get_results(self.uut, valid_file)
+            self.assertEqual(result[0].contents,
+                             [2, 'http://www.facebook.com/200',
+                              200, LINK_CONTEXT.no_context])
+            self.assertEqual(result[1].contents,
+                             [2, 'http://www.google.com/404',
+                              404, LINK_CONTEXT.no_context])
+            self.assertEqual(result[2].contents,
+                             [3, 'http://www.gmail.com/200',
+                              200, LINK_CONTEXT.no_context])
+            self.assertEqual(result[3].contents,
+                             [4, 'http://www.gmail.com/404',
+                              404, LINK_CONTEXT.no_context])
+
     def test_precentage_encoded_url(self):
         valid_file = """
         # A url with a precentage-encoded character in path
