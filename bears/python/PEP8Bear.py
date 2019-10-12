@@ -8,9 +8,21 @@ from dependency_management.requirements.PipRequirement import PipRequirement
 from coalib.results.Diff import Diff
 from coalib.results.Result import Result
 from coalib.settings.Setting import typed_list
+from coalib.bearlib.aspects import map_setting_to_aspect
+from coalib.bearlib.aspects.Formatting import (
+    Formatting,
+    LineLength,
+)
 
 
-class PEP8Bear(LocalBear):
+class PEP8Bear(
+        LocalBear,
+        aspects={
+            'detect': [
+                LineLength,
+            ]},
+        languages=['Python'],
+        ):
     LANGUAGES = {'Python', 'Python 2', 'Python 3'}
     REQUIREMENTS = {PipRequirement('autopep8', '1.2')}
     AUTHORS = {'The coala developers'}
@@ -19,6 +31,9 @@ class PEP8Bear(LocalBear):
     CAN_FIX = {'Formatting'}
     ASCIINEMA_URL = 'https://asciinema.org/a/165394'
 
+    @map_setting_to_aspect(
+        max_line_length=LineLength.max_line_length,
+        )
     @deprecate_settings(indent_size='tab_width')
     def run(self, filename, file,
             max_line_length: int = 79,
@@ -62,4 +77,6 @@ class PEP8Bear(LocalBear):
             yield Result(self,
                          'The code does not comply to PEP8.',
                          affected_code=(diff.range(filename),),
-                         diffs={filename: diff})
+                         diffs={filename: diff},
+                         aspect=Formatting('py'),
+                         )
