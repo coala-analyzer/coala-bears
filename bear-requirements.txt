@@ -10,6 +10,7 @@ cppclean~=0.12.0
 cpplint~=1.3
 dennis~=0.9
 docutils-ast-writer~=0.1.2
+dodgy~=0.1.9
 eradicate~=0.1.6
 git-url-parse~=1.1
 guess-language-spirit~=0.5.2
