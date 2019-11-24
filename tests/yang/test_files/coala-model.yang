@@ -1,0 +1,24 @@
+module coala-model {
+
+  namespace "http://coala.io/yang/coala-model";
+  prefix coala;
+
+  organization coala.io;
+  contact "yang@coala.io";
+  description "The coala code analysis YANG model";
+
+  revision 2017-08-02 {
+    description "Test version";
+    reference "http://coala.io/yang";
+  }
+
+  list bears {
+    key name;
+    description "All available coala Bears";
+
+    leaf name {
+      type string;
+      description "The name of the coala Bear";
+    }
+  }
+}

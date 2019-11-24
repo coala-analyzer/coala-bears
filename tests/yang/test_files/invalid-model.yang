@@ -1,0 +1,5 @@
+module invalid-model {
+
+  namespace "http://coala.io/yang/invalid-model";
+  prefix invalid;
+}
