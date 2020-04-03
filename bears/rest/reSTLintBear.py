@@ -1,9 +1,23 @@
+import re
+
 from restructuredtext_lint import lint
 
 from coalib.bears.LocalBear import LocalBear
 from dependency_management.requirements.PipRequirement import PipRequirement
 from coalib.results.Result import Result
 from coalib.results.RESULT_SEVERITY import RESULT_SEVERITY
+
+
+def _ignore_unknown(errors):
+    for error in errors:
+        msg = error.full_message
+        res = re.search(
+            r'No directive entry for "[\w|\-]+"|'
+            r'Unknown directive type "[\w|\-]+"|'
+            r'No role entry for "[\w|\-]+"|'
+            r'Unknown interpreted text role "[\w|\-]+"', msg)
+        if not res:
+            yield error
 
 
 class reSTLintBear(LocalBear):
@@ -14,12 +28,16 @@ class reSTLintBear(LocalBear):
     LICENSE = 'AGPL-3.0'
     CAN_DETECT = {'Formatting', 'Syntax'}
 
-    def run(self, filename, file):
+    def run(self, filename, file, ignore_unknown_roles: bool=False):
         """
         Lints reStructuredText.
+
+        :param ignore_unknown_roles:   Ignore unknown directives and roles.
         """
         content = ''.join(file)
         errors = lint(content)
+
+        errors = _ignore_unknown(errors) if ignore_unknown_roles else errors
 
         for error in errors:
             severity = {
