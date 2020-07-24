@@ -1,10 +1,9 @@
 from queue import Queue
 import unittest
 
-from bears.general.AnnotationBear import AnnotationBear
+from bears.general.AnnotationBear import AnnotationBear, AnnotationResult
 from coalib.results.SourceRange import SourceRange
 from coalib.results.AbsolutePosition import AbsolutePosition
-from coalib.results.HiddenResult import HiddenResult
 from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
 from coalib.testing.LocalBearTestHelper import execute_bear
@@ -149,4 +148,31 @@ class AnnotationBearTest(unittest.TestCase):
                 # The """" was recognized as a string start and end before.
                 # That lead to a Result being yielded because of unclosed
                 # quotes, this asserts that no such thing happened.
-                self.assertEqual(type(result), HiddenResult)
+                self.assertEqual(type(result), AnnotationResult)
+
+
+class AnnotationResultTest(unittest.TestCase):
+
+    def test_create_result_with_string_ranges_and_comment_ranges(self):
+        string_ranges = (SourceRange.from_values('filename', 1),)
+        comment_ranges = (SourceRange.from_values('filename', 2),)
+
+        result = AnnotationResult(AnnotationBear, string_ranges,
+                                  comment_ranges)
+        self.assertEqual(result.contents, dict(strings=string_ranges,
+                                               comments=comment_ranges))
+        self.assertEqual(result.string_ranges, string_ranges)
+        self.assertEqual(result.comment_ranges, comment_ranges)
+        self.assertEqual(result.exception_msg, None)
+        self.assertEqual(result.message, '')
+
+    def test_create_result_with_exception_msg(self):
+        exception_msg = 'Exception msg'
+
+        result = AnnotationResult(AnnotationBear,
+                                  exception_msg=exception_msg)
+        self.assertEqual(result.contents, exception_msg)
+        self.assertEqual(result.string_ranges, None)
+        self.assertEqual(result.comment_ranges, None)
+        self.assertEqual(result.exception_msg, exception_msg)
+        self.assertEqual(result.message, exception_msg)

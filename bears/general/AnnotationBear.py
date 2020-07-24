@@ -5,6 +5,41 @@ from coalib.results.Result import Result, RESULT_SEVERITY
 from coalib.results.SourceRange import SourceRange
 from coalib.results.AbsolutePosition import AbsolutePosition
 from coala_utils.string_processing.Core import unescaped_search_for
+from coala_utils.decorators import (enforce_signature, generate_repr,
+                                    generate_ordering)
+
+
+@generate_repr(('id', hex),
+               'origin',
+               'string_ranges',
+               'comment_ranges',
+               'exception_msg',
+               'message')
+@generate_ordering('string_ranges',
+                   'comment_ranges',
+                   'exception_msg',
+                   'contents',
+                   'message',
+                   'origin',
+                   'message_base')
+class AnnotationResult(HiddenResult):
+
+    @enforce_signature
+    def __init__(self, origin,
+                 string_ranges: (tuple, None)=None,
+                 comment_ranges: (tuple, None)=None,
+                 exception_msg: (str, None)=None):
+
+        Result.__init__(self, origin,
+                        exception_msg if exception_msg is not None else '')
+
+        self.contents = (dict(strings=string_ranges,
+                              comments=comment_ranges)
+                         if exception_msg is None
+                         else exception_msg)
+        self.string_ranges = string_ranges
+        self.comment_ranges = comment_ranges
+        self.exception_msg = exception_msg
 
 
 class AnnotationBear(LocalBear):
@@ -35,7 +70,7 @@ class AnnotationBear(LocalBear):
         except FileNotFoundError:
             content = ('coalang specification for ' + language +
                        ' not found.')
-            yield HiddenResult(self, content)
+            yield AnnotationResult(self, exception_msg=content)
             return
 
         string_delimiters = dict(lang_dict['string_delimiters'])
@@ -58,8 +93,7 @@ class AnnotationBear(LocalBear):
             yield Result(self, str(e), severity=RESULT_SEVERITY.MAJOR,
                          affected_code=(e.code,))
 
-        content = {'strings': string_ranges, 'comments': comment_ranges}
-        yield HiddenResult(self, content)
+        yield AnnotationResult(self, string_ranges, comment_ranges)
 
     def find_annotation_ranges(self,
                                file,
