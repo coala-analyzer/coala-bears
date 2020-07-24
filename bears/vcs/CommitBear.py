@@ -204,23 +204,24 @@ class _CommitBear(GlobalBear):
                     'Shortlog of HEAD commit does not match given regex:'
                     ' {regex}'.format(regex=shortlog_regex))
 
-        if shortlog_imperative_check:
-            colon_pos = shortlog.find(':')
-            shortlog = (shortlog[colon_pos + 1:]
-                        if colon_pos != -1
-                        else shortlog)
-            has_flaws = self.check_imperative(shortlog)
-            if has_flaws:
-                bad_word = has_flaws[0]
-                yield Result(self,
-                             "Shortlog of HEAD commit isn't in imperative "
-                             "mood! Bad words are '{}'".format(bad_word))
         if shortlog_wip_check:
             if 'wip' in shortlog.lower()[:4]:
                 yield Result(
                     self,
                     'This commit seems to be marked as work in progress and '
                     'should not be used in production. Treat carefully.')
+
+        if shortlog_imperative_check:
+            colon_pos = shortlog.find(':')
+            shortlog = (shortlog[colon_pos + 1:]
+                            if colon_pos != -1
+                            else shortlog)
+            has_flaws = self.check_imperative(shortlog)
+            if has_flaws:
+                bad_word = has_flaws[0]
+                yield Result(self,
+                             "Shortlog of HEAD commit isn't in imperative "
+                             "mood! Bad words are '{}'".format(bad_word))
 
     def check_imperative(self, paragraph):
         """

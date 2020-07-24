@@ -202,6 +202,11 @@ class GitCommitBearTest(unittest.TestCase):
                          ['This commit seems to be marked as work in progress '
                           'and should not be used in production. Treat '
                           'carefully.'])
+        self.git_commit('WIP: Shortlog')
+        self.assertEqual(self.run_uut(shortlog_wip_check=True),
+                         ['This commit seems to be marked as work in progress '
+                          'and should not be used in production. Treat '
+                          'carefully.'])
         self.assertEqual(self.run_uut(shortlog_wip_check=None), [])
         self.git_commit('Shortlog as usual')
         self.assertEqual(self.run_uut(shortlog_wip_check=True), [])
