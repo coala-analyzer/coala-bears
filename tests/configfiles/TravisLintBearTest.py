@@ -10,7 +10,7 @@ from coalib.settings.Section import Section
 from coalib.testing.LocalBearTestHelper import LocalBearTestHelper
 from coalib.testing.BearTestHelper import generate_skip_decorator
 
-from bears.yaml.TravisLintBear import TravisLintBear
+from bears.configfiles.TravisLintBear import TravisLintBear
 
 
 def get_testfile_path(name):
