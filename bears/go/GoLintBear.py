@@ -14,7 +14,7 @@ class GoLintBear:
     """
     LANGUAGES = {'Go'}
     REQUIREMENTS = {GoRequirement(
-        package='github.com/golang/lint/golint', flag='-u')}
+        package='https://godoc.org/golang.org/x/lint/golint', flag='-u')}
     AUTHORS = {'The coala developers'}
     AUTHORS_EMAILS = {'coala-devel@googlegroups.com'}
     LICENSE = 'AGPL-3.0'
