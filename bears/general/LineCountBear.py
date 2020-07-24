@@ -14,8 +14,8 @@ class LineCountBear(LocalBear):
     CAN_DETECT = {'Formatting'}
 
     def _get_blank_line_count(self, file):
-        num_blank_lines = len(
-            list(filter(lambda x: re.match(r'^\s*$', x), file)))
+        pattern = re.compile(r'^\s*$')
+        num_blank_lines = len([x for x in file if pattern.match(x)])
         return num_blank_lines
 
     def run(self, filename, file, min_lines_per_file: int = 1,
