@@ -406,8 +406,8 @@ class InvalidLinkBearTest(LocalBearTestHelper):
         http://coalaisthebest.com/
         http://httpbin.org/status/404
         http://httpbin.org/status/410
-        http://httpbin.org/status/500
-        http://httpbin.org/status/503
+        http://httpbin.org/status/500/
+        http://httpbin.org/status/503/
         http://www.notexample.com/404
         http://exampe.com/404
         http://example.co.in/404""".splitlines()
@@ -415,11 +415,11 @@ class InvalidLinkBearTest(LocalBearTestHelper):
         link_ignore_list = [
                            'http://coalaisthebest.com/',
                            'http://httpbin.org/status/4[0-9][0-9]',
-                           'http://httpbin.org/status/410',
-                           'http://httpbin.org/status/5[0-9][0-9]',
-                           'http://httpbin.org/status/503',
+                           'http://httpbin.org/status/410/',
+                           'http://httpbin.org/status/5[0-9][0-9]/',
+                           'http://httpbin.org/status/503/',
                            'http://www.notexample.com/404',
-                           'http://exampe.com/404',
+                           '//exampe.com/404',
                            'http://example.co.in/404'
                           ]
 

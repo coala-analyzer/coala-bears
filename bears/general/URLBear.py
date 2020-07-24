@@ -69,8 +69,34 @@ class URLBear(LocalBear):
         return splitted_schema
 
     @staticmethod
+    def process_ignored_list(link_ignore_list):
+        new_ignored_list = []
+
+        for link in link_ignore_list:
+
+            if link.endswith('/'):
+                suffixes = ['', '**']
+            else:
+                suffixes = ['', '/**']
+
+            if link.startswith('//'):
+                prefixes = ['http:', 'https:']
+            else:
+                prefixes = ['']
+
+            for prefix in prefixes:
+                for suffix in suffixes:
+                    new_ignored_list.append(prefix + link + suffix)
+
+        return new_ignored_list
+
+    @staticmethod
     def extract_links_from_file(file, link_ignore_regex, link_ignore_list):
         link_ignore_regex = re.compile(link_ignore_regex)
+
+        if link_ignore_list:
+            link_ignore_list = URLBear.process_ignored_list(link_ignore_list)
+
         regex = re.compile(
             r"""
             ((git\+|bzr\+|svn\+|hg\+|)  # For VCS URLs
@@ -117,7 +143,8 @@ class URLBear(LocalBear):
                         link_context |= LINK_CONTEXT.pip_vcs_url
                     file_context[link] = link_context
                 if not (link_ignore_regex.search(link) or
-                        fnmatch(link, link_ignore_list)):
+                        fnmatch(link, link_ignore_list) or
+                        fnmatch(link + '/', link_ignore_list)):
                     yield link, line_number, link_context
 
     def analyze_links_in_file(self, file, link_ignore_regex,
