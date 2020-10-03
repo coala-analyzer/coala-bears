@@ -68,6 +68,8 @@ pip_requirements:
     version: ~=3.12
   radon:
     version: ==1.4.0
+  regexlint:
+    version: ~=1.6
   restructuredtext-lint:
     version: ~=1.0
   rstcheck:

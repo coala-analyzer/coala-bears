@@ -329,6 +329,7 @@ RadonBear:
   - Python
   - Python 2
   - Python 3
+RegexLintBear:
 RuboCopBear:
   - Ruby
 RubyFastererBear:
