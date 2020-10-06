@@ -49,7 +49,7 @@ To also install all bears for coala at once, run:
 
 Be sure to use the latest version of pip, the default pip from Debian doesn't
 support our dependency version number specifiers. You will have to `use a
-virtualenv <https://github.com/coala/coala/wiki/FAQ#installation-is-failing-help>`__
+virtualenv <http://docs.coala.io/en/latest/Help/FAQ.html#installation-is-failing-help>`__
 in this case.
 
 |PyPI| |Windows| |Linux|
