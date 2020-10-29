@@ -34,11 +34,17 @@ class LineContinuationBear(LocalBear):
         except (UnknownLanguageError, AttributeError):
             logging.error('Language {} is not yet supported.'.format(language))
             return
-
+        k = 0
         for line_number, line in enumerate(file):
             if len(line) > 1:
-                if line[-2] in line_continuation:
+                if '"""' in line and k == 1:
+                    k = 0
+                elif '"""' in line and k == 0:
+                    k = 1
+                if(line[-2] in line_continuation):
                     if '>>> from ' in line:
+                        continue
+                    elif k == 1 and line[-2] == "\\":
                         continue
                     yield Result.from_values(
                         origin=self,
