@@ -1,4 +1,5 @@
-from coalib.bearlib.languages.LanguageDefinition import LanguageDefinition
+from coalib.bearlib.languages.Language import Language, UnknownLanguageError
+from coalib.bearlib import deprecate_settings
 from coalib.bears.LocalBear import LocalBear
 from coalib.results.HiddenResult import HiddenResult
 from coalib.results.Result import Result, RESULT_SEVERITY
@@ -12,6 +13,7 @@ class AnnotationBear(LocalBear):
     AUTHORS_EMAILS = {'coala-devel@googlegroups.com'}
     LICENSE = 'AGPL-3.0'
 
+    @deprecate_settings(coalang_dir='coalang_dir')
     def run(self, filename, file, language: str, coalang_dir: str = None):
         """
         Finds out all the positions of strings and comments in a file.
@@ -31,19 +33,26 @@ class AnnotationBear(LocalBear):
             ``u"string"``, the ``u`` will not be in the source range).
         """
         try:
-            lang_dict = LanguageDefinition(language, coalang_dir=coalang_dir)
-        except FileNotFoundError:
-            content = ('coalang specification for ' + language +
-                       ' not found.')
+            lang = Language[language].get_default_version()
+        except UnknownLanguageError:
+            content = (
+                'coalang specification for {} not found.'.format(language))
             yield HiddenResult(self, content)
             return
 
-        string_delimiters = dict(lang_dict['string_delimiters'])
+        string_delimiters = dict(getattr(lang, 'string_delimiters', {}))
         multiline_string_delimiters = dict(
-            lang_dict['multiline_string_delimiters'])
+            getattr(lang, 'multiline_string_delimiters', {}))
         multiline_comment_delimiters = dict(
-            lang_dict['multiline_comment_delimiters'])
-        comment_delimiter = dict(lang_dict['comment_delimiters'])
+            getattr(lang, 'multiline_comment_delimiters', {}))
+        try:
+            if isinstance(lang.comment_delimiters, str):
+                comment_delimiters = [lang.comment_delimiters]
+            else:
+                iter(lang.comment_delimiters)
+                comment_delimiters = lang.comment_delimiters
+        except (AttributeError, TypeError):
+            comment_delimiters = ()
         string_ranges = comment_ranges = ()
         try:
             string_ranges, comment_ranges = self.find_annotation_ranges(
@@ -51,7 +60,7 @@ class AnnotationBear(LocalBear):
                 filename,
                 string_delimiters,
                 multiline_string_delimiters,
-                comment_delimiter,
+                comment_delimiters,
                 multiline_comment_delimiters)
 
         except NoCloseError as e:
@@ -82,7 +91,7 @@ class AnnotationBear(LocalBear):
             A dictionary containing the various ways to define multi-line
             strings in a language.
         :param comment_delimiter:
-            A dictionary containing the various ways to define single-line
+            A tuple containing the various ways to define single-line
             comments in a language.
         :param multiline_comment_delimiters:
             A dictionary containing the various ways to define multi-line
@@ -158,20 +167,20 @@ class AnnotationBear(LocalBear):
                                func,
                                single_comment=False):
         _range = end_position = None
-        for annotation in annotations.keys():
+        for annotation in annotations:
             if text[position:].startswith(annotation):
-                if not single_comment:
+                if single_comment:
                     ret_val = func(file,
                                    filename,
                                    text,
                                    annotation,
-                                   annotations[annotation],
                                    position)
                 else:
                     ret_val = func(file,
                                    filename,
                                    text,
                                    annotation,
+                                   annotations[annotation],
                                    position)
                 if ret_val:
                     _range, end_position = ret_val[0], ret_val[1]

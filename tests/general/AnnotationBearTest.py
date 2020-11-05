@@ -2,12 +2,23 @@ from queue import Queue
 import unittest
 
 from bears.general.AnnotationBear import AnnotationBear
+from coalib.bearlib.languages.Language import Language
 from coalib.results.SourceRange import SourceRange
 from coalib.results.AbsolutePosition import AbsolutePosition
 from coalib.results.HiddenResult import HiddenResult
 from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
 from coalib.testing.LocalBearTestHelper import execute_bear
+
+
+@Language
+class EmptyLang:
+    pass
+
+
+@Language
+class StringComments:
+    comment_delimiters = '//'
 
 
 class AnnotationBearTest(unittest.TestCase):
@@ -19,6 +30,12 @@ class AnnotationBearTest(unittest.TestCase):
         self.section2 = Section('')
         self.section2.append(Setting('language', 'c'))
         self.c_uut = AnnotationBear(self.section2, Queue())
+        self.section3 = Section('')
+        self.section3.append(Setting('language', 'EmptyLang'))
+        self.empty_uut = AnnotationBear(self.section3, Queue())
+        self.section4 = Section('')
+        self.section4.append(Setting('language', 'StringComments'))
+        self.string_uut = AnnotationBear(self.section4, Queue())
 
     def test_single_line_string(self):
         text = ["'from start till the end with #comments'\n", ]
@@ -53,6 +70,37 @@ class AnnotationBearTest(unittest.TestCase):
         with execute_bear(self.python_uut, 'F', text) as result:
             self.assertEqual(result[0].contents['strings'], ())
             self.assertEqual(result[0].contents['comments'], compare)
+
+    def test_string_comment_delim(self):
+        text = ['Line with //comment\n',
+                'Second line with //different comment\n']
+        joined = ''.join(text)
+        first_comment_start = joined.find('//')
+        first_comment_end = joined.find('\n', first_comment_start + 1)
+        second_comment_start = joined.find('//', first_comment_start + 1)
+        second_comment_end = joined.find('\n', second_comment_start + 1)
+        expected = (
+            SourceRange.from_absolute_position(
+                'F',
+                AbsolutePosition(text, first_comment_start),
+                AbsolutePosition(text, first_comment_end)),
+            SourceRange.from_absolute_position(
+                'F',
+                AbsolutePosition(text, second_comment_start),
+                AbsolutePosition(text, second_comment_end)))
+        with execute_bear(self.string_uut, 'F', text) as result:
+            self.assertEqual(result[0].contents['strings'], ())
+            self.assertEqual(result[0].contents['comments'], expected)
+
+    def test_single_line_comment_no_linefeed(self):
+        text = ['Line with #comment']
+        expected = (SourceRange.from_absolute_position(
+            'F',
+            AbsolutePosition(text, text[0].find('#')),
+            AbsolutePosition(text, len(text[0]) - 1)),)
+        with execute_bear(self.python_uut, 'F', text) as result:
+            self.assertEqual(result[0].contents['strings'], ())
+            self.assertEqual(result[0].contents['comments'], expected)
 
     def test_multiline_comment(self):
         text = ['some string /*within \n', "'multiline comment'*/"]
@@ -128,6 +176,12 @@ class AnnotationBearTest(unittest.TestCase):
         with execute_bear(uut, 'F', text) as result:
             self.assertEqual(result[0].contents,
                              'coalang specification for Valyrian not found.')
+
+    def test_empty_lang(self):
+        text = ['']
+        with execute_bear(self.empty_uut, 'F', text) as result:
+            self.assertEqual(result[0].contents, {
+                             'strings': (), 'comments': ()})
 
     def test_escape_strings(self):
         text = [r"'I\'ll be back' -T1000"]
