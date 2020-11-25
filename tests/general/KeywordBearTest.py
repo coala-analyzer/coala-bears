@@ -24,6 +24,8 @@ KeywordBearTest = verify_local_bear(
                    'test line warNING'),
     settings={'keywords': 'todo, warning',
               'language': 'c'})
+# Language setting is used to generate the diff correctly and doesn't influence
+# where the keyword may appear.
 
 
 class KeywordBearDiffTest(unittest.TestCase):
