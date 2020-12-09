@@ -42,7 +42,7 @@ class InvalidLinkBear(LocalBear):
         :param follow_redirects: Set to true to autocorrect redirects.
         """
         for result in dependency_results.get(URLHeadBear.name, []):
-            line_number, link, code, context = result.contents
+            line_number, link, code, context, robots_allowed = result.contents
             if context is context.xml_namespace:
                 if code and 200 <= code < 300:
                     pass
@@ -54,6 +54,14 @@ class InvalidLinkBear(LocalBear):
                         file=filename,
                         line=line_number,
                         severity=RESULT_SEVERITY.INFO)
+            elif not robots_allowed:
+                yield Result.from_values(
+                    origin=self,
+                    message=('robots.txt does not allow request to '
+                             '{url}').format(url=link),
+                    file=filename,
+                    line=line_number,
+                    severity=RESULT_SEVERITY.NORMAL)
             elif code is None:
                 yield Result.from_values(
                     origin=self,

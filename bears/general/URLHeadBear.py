@@ -11,6 +11,7 @@ from coalib.results.Result import Result
 from coalib.settings.Setting import typed_dict
 from coala_utils.decorators import (enforce_signature, generate_ordering,
                                     generate_repr)
+from urllib import robotparser
 
 
 @generate_repr(('id', hex),
@@ -41,7 +42,8 @@ class URLHeadResult(HiddenResult):
     def __init__(self, origin, affected_code,
                  link: str,
                  head_response: (requests.models.Response, Exception),
-                 link_context: LINK_CONTEXT):
+                 link_context: LINK_CONTEXT,
+                 robots_allowed: bool):
 
         http_status_code = (head_response.status_code if
                             isinstance(head_response,
@@ -52,11 +54,12 @@ class URLHeadResult(HiddenResult):
                         affected_code)
 
         self.contents = [affected_code[0].start.line, link, http_status_code,
-                         link_context]
+                         link_context, robots_allowed]
         self.link = link
         self.http_status_code = http_status_code
         self.link_context = link_context
         self.head_response = head_response
+        self.robots_allowed = robots_allowed
 
 
 class URLHeadBear(LocalBear):
@@ -88,6 +91,13 @@ class URLHeadBear(LocalBear):
         except requests.exceptions.RequestException as exc:
             return exc
 
+    @staticmethod
+    def get_robots_file(host):
+        rp = robotparser.RobotFileParser()
+        rp.set_url('https://' + host + '/robots.txt')
+        rp.read()
+        return rp
+
     @deprecate_settings(network_timeout=('timeout', lambda t: {'*': t}))
     def run(self, filename, file, dependency_results=dict(),
             network_timeout: typed_dict(str, int, DEFAULT_TIMEOUT) = dict(),
@@ -117,15 +127,24 @@ class URLHeadBear(LocalBear):
                            if not url == '*' else '*': timeout
                            for url, timeout in network_timeout.items()}
 
+        robots_dict = {}
+
         for result in dependency_results.get(URLBear.name, []):
             host = urlparse(result.link).netloc
-            head_resp = self.get_head_response(
-                result.link,
-                network_timeout.get(host)
-                if host in network_timeout
-                else network_timeout.get('*')
-                if '*' in network_timeout
-                else URLHeadBear.DEFAULT_TIMEOUT)
+            if host not in robots_dict.keys():
+                robots_dict[host] = self.get_robots_file(host)
+            if robots_dict[host].can_fetch('*', result.link):
+                head_resp = self.get_head_response(
+                    result.link,
+                    network_timeout.get(host)
+                    if host in network_timeout
+                    else network_timeout.get('*')
+                    if '*' in network_timeout
+                    else URLHeadBear.DEFAULT_TIMEOUT)
 
-            yield URLHeadResult(self, result.affected_code, result.link,
-                                head_resp, result.link_context)
+                yield URLHeadResult(self, result.affected_code, result.link,
+                                    head_resp, result.link_context, True)
+            else:
+                yield URLHeadResult(self, result.affected_code, result.link,
+                                    requests.models.Response(),
+                                    result.link_context, False)
