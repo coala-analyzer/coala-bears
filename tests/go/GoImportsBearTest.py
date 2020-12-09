@@ -1,4 +1,3 @@
-
 from bears.go.GoImportsBear import GoImportsBear
 from coalib.testing.LocalBearTestHelper import verify_local_bear
 
