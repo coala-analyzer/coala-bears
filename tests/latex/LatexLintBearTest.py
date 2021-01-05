@@ -1,19 +1,21 @@
+from queue import Queue
+
 from bears.latex.LatexLintBear import LatexLintBear
-from coalib.testing.LocalBearTestHelper import verify_local_bear
+from coalib.testing.BearTestHelper import generate_skip_decorator
+from coalib.testing.LocalBearTestHelper import LocalBearTestHelper
+from coalib.settings.Section import Section
 
 
-good_file = """
-{.}
-{ sometext }\\
-"""
+@generate_skip_decorator(LatexLintBear)
+class LatexLintBearTest(LocalBearTestHelper):
 
+    def setUp(self):
+        self.section = Section('name')
+        self.uut = LatexLintBear(self.section, Queue())
 
-bad_file = """
-{ .}
-{ Sometext \\
-"""
-
-
-LatexLintBearTest = verify_local_bear(LatexLintBear,
-                                      valid_files=(good_file,),
-                                      invalid_files=(bad_file,))
+    def test_result(self):
+        self.check_validity(self.uut, ['{.}', '{ sometext }'])
+        self.check_invalidity(self.uut, ['{ .}', '{ sometext }'])
+        results = self.check_invalidity(self.uut, ['2018-12-01'])
+        self.assertEqual('Wrong length of dash may have been used.',
+                         results[0].message)

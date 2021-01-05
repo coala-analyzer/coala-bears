@@ -22,6 +22,6 @@ class LatexLintBear:
     def create_arguments(filename, file, config_file):
         return (
             '--format',
-            '%k %n in {0} line %l: %m!n'.format(filename),
+            '%k %n in {0} line %l: %m'.format(filename),
             filename,
         )
