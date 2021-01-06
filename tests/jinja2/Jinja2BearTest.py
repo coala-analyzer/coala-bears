@@ -180,7 +180,8 @@ render stuff
 
 Jinja2BearForLoopLabelDisableTest = verify_local_bear(
     Jinja2Bear,
-    valid_files=(valid_file_without_end_comments, valid_file_with_end_comments),
+    valid_files=(valid_file_without_end_comments,
+                 valid_file_with_end_comments),
     invalid_files=(),
     settings={'check_end_labels': 'False'})
 
@@ -225,3 +226,138 @@ Jinja2BearControlBlockTest = verify_local_bear(
     valid_files=('foo {% for a in b %} bar {% endfor %}',),
     invalid_files=('This {% for a in b %} has no closing tag',
                    'This {% endif %} has no open tag'))
+
+good_indent_file1 = """
+{% for tony in avengers %}
+  {% for thanos in enemy %}
+render stuff
+  {% endfor %}{# for thanos in enemy #}
+{% endfor %}{# for tony in avengers #}
+"""
+
+good_indent_file2 = """
+import some_stuff
+for x in y:
+{% if x is True %}
+print("This line doesn't get affected by indentatoin")
+{% elif %}
+print("Bye Bye")
+{% endif %}{# if x is True #}
+
+{% if x in y %}
+some statement
+{% endif %}{# if x in y #}
+"""
+
+good_indent_file3 = """
+{% if x in y %}
+  {% for var in variable %}
+    {% set var1 in y %}
+  {% endfor %}{# for var in variable #}
+{% endif %}{# if x in y #}
+"""
+
+good_indent_file4 = """
+{% for x in y %}
+  {% if y in z %}
+    {% set var1 = value1 %}
+  {% elif %}
+    {% set var2 = value2 %}
+  {% else %}
+    {% set var3 = value3 %}
+  {% endif %}{# if y in z #}
+{% endfor %}{# for x in y #}
+
+{% if y in z %}
+{% elif %}
+  {% set var4 = value4 %}
+{% else %}
+{% endif %}{# if y in z #}
+"""
+
+bad_indent_file1 = """
+{% for tony in avengers %}
+{% for thanos in enemy %}
+render stuff
+  {% endfor %}
+{% endfor %}
+"""
+
+bad_indent_file2 = """
+import some_stuff
+for x in y:
+  {% if x is True %}
+  print("This line doesn't get affected by indentatoin")
+     {% elif %}
+  print("Bye Bye")
+  {% endif %}
+
+"""
+bad_indent_file3 = """
+{% if x in y %}
+  {% for var in variable %}
+  {% set var1 in y %}
+{% endfor %}{# for var in variable #}
+{% endif %}{# if x in y #}
+"""
+
+bad_indent_file4 = """
+{% if x in y %}
+some statement
+  {% endif %}{# if x in y #}
+"""
+
+bad_indent_file5 = """
+{% for var in variable %}
+{% set var1 in y %}
+{% endfor %}{# for var in variable #}
+"""
+
+valid_file_with_no_indentation = """
+{% for tony in avengers %}
+{% for thanos in enemy %}
+render stuff
+{% endfor %}{# for thanos in enemy #}
+{% endfor %}{# for tony in avengers #}
+"""
+valid_file_with_bad_indentation = """
+{% if x in y %}
+{% for var in variable %}
+    {% set var1 in y %}
+  {% endfor %}{# for var in variable #}
+{% endif %}{# if x in y #}
+"""
+Jinja2BearIndentationDisableTest = verify_local_bear(
+    Jinja2Bear,
+    valid_files=(valid_file_with_no_indentation,
+                 valid_file_with_bad_indentation),
+    invalid_files=(),
+    settings={'check_indentation': 'False'})
+
+Jinja2BearIndentationEnableTest = verify_local_bear(
+    Jinja2Bear,
+    valid_files=(good_indent_file1, good_indent_file2, good_indent_file3,
+                 good_indent_file4),
+    invalid_files=(bad_indent_file1, bad_indent_file2, bad_indent_file3,
+                   bad_indent_file4, bad_indent_file5),
+    settings={'check_indentation': 'True'})
+
+
+class Jinja2BearIndentationDiffTest(unittest.TestCase):
+
+    def setUp(self):
+        self.section = ''
+        self.section.append(Setting('check_indentation', 'True'))
+        self.uut = Jinja2Bear(self.section, Queue())
+
+        def test_bad_indentation(self):
+            content = [line + '\n' for line in bad_indent_file4.splitlines()]
+            with execute_bear(self.uut, 'F', content) as result:
+                self.assertEqual(
+                    result[0].diffs['F'].unified_diff,
+                    '--- \n'
+                    '+++ \n'
+                    '{% if x in y %}\n'
+                    'some statement\n'
+                    '-  {% endif %}{# if x in y #}\n'
+                    '+{% endif %}{# if x in y #}\n')

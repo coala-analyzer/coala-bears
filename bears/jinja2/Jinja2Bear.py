@@ -5,6 +5,24 @@ from coalib.results.Result import Result, RESULT_SEVERITY
 from coalib.results.Diff import Diff
 
 
+def generate_indent_diff(file, filename, line, line_number, indent_level):
+    """
+    Generate a diff for incorrectly indented line.
+
+    :param indent_level: The number of spaces the is expected at the start
+                         of the line
+    """
+
+    diff = Diff(file)
+
+    content = line.lstrip(' ')
+    replacement = ' '*indent_level + content
+
+    diff.change_line(line_number, line, replacement)
+
+    return {filename: diff}
+
+
 def generate_spacing_diff(file, filename, line, line_number,
                           match_object, required_spacing):
     """
@@ -101,6 +119,46 @@ def has_required_spacing(string, required_spacing):
         and trailing_spaces == required_spacing)
 
 
+def has_required_indent_level(line, indent_level):
+    """
+    Check if the line has the desired indentation level.
+
+    :param line:         The actual line
+    :param indent_level: The number of spaces the is expected at the start
+                         of the line.
+    :return:             True if the line has the required number of spaces
+                         at the start of line, False otherwise
+
+    >>> has_required_indent_level("    I am Thanos", 4)
+    True
+    >>> has_required_indent_level("  I am Thanos", 4)
+    False
+
+    """
+    content = line.lstrip(' ')
+    desired_line = ' '*indent_level + content
+
+    return (desired_line == line)
+
+
+def indent(self):
+    """
+    Increases the indentation_level of a line. This is used to
+    maintain proper indentation inside the nested loops
+
+    """
+    self.indent_level += self.INDENT_STEP
+
+
+def dedent(self):
+    """
+    Decreases the indentation_level of a line. This is used to
+    maintain proper indentation.
+
+    """
+    self.indent_level -= self.INDENT_STEP
+
+
 class Jinja2Bear(LocalBear):
     LANGUAGES = {'Jinja2'}
     AUTHORS = {'The coala developers'}
@@ -109,6 +167,8 @@ class Jinja2Bear(LocalBear):
     ASCIINEMA_URL = 'https://asciinema.org/a/azi6u1gcxutoxn0l7xpu4pljp'
     CAN_DETECT = {'Syntax'}
     CAN_FIX = {'Formatting', 'Documentation'}
+
+    LABEL_KEYWORD_LIST = ['for', 'if', 'block', 'set', 'elif', 'else']
 
     VARIABLE_REGEX = re.compile(
         r'(?P<open>{{)(?P<content>.*?)(?P<close>}})')
@@ -123,6 +183,47 @@ class Jinja2Bear(LocalBear):
     CONTROL_END_REGEX = re.compile(
         r'(?P<open>{%[+-]?)(?P<content>\s*end(for|if)\s*?)'
         r'(?P<close>[+-]?%})(?P<label>{#.*?#})?')
+    LABEL_REGEX = re.compile(
+        r'(?P<open>{%[+-]?)'
+        r'(?P<label>\s*(end)*(' + '|'.join(LABEL_KEYWORD_LIST) + '))')
+
+    """
+    :label_stack:  Stores the control tag present in each line.
+    :INDENT_STEP:  Number of spaces for each indentation
+    :indent_level: Stores the depth of indentation. Tells how many spaces
+                  needed to be added to the line.
+
+    """
+    label_stack = []
+    INDENT_STEP = 2
+    indent_level = 0
+
+    def handle_line_indent_issue(self, file, filename, line, line_number,
+                                 indent_level, match_object):
+        """
+        Handles incorrectly indented lines
+
+        :param indent_level:    The number of spaces the is expected at the
+                                start of the line
+        :param match_object:    A Match object containing the groups ``open``,
+                                ``label`` containing the opening delimiters of
+                                a Jinja2 tag and ``label``containing the
+                                control tag associated with the `open`` tag.
+        """
+        diff = generate_indent_diff(file, filename, line, line_number,
+                                    indent_level)
+
+        return Result.from_values(
+            origin=self,
+            message='Line should be indented with '
+                    '`{0}` spaces at the start.'.format(
+                        indent_level),
+            file=filename,
+            line=line_number,
+            column=match_object.start(0) + 1,
+            end_line=line_number,
+            end_column=match_object.end(0) + 1,
+            diffs=diff)
 
     def handle_control_spacing_issue(self, file, filename, line, line_number,
                                      control_spacing, match_object):
@@ -150,6 +251,103 @@ class Jinja2Bear(LocalBear):
             end_line=line_number,
             end_column=match_object.end(0) + 1,
             diffs=diff)
+
+    def check_indentation_line(self,
+                               file,
+                               filename,
+                               line,
+                               line_number,
+                               check_indentation):
+        """
+        Check any line for indentation issues.
+
+        :param file:
+            The content of the file currently being inspected.
+        :param filename:
+            The name of the file currently being inspected.
+        :param line:
+            The content of the line currently being inspected.
+        :param line_number:
+            The current line number.
+
+        """
+
+        if not check_indentation:
+            return
+
+        for match in self.LABEL_REGEX.finditer(line):
+            label = match.group('label').strip()
+
+            # Maintain the same indentation level for the lines which start
+            # with the tags `set`
+            if label == 'set':
+                indent_level = self.indent_level + self.INDENT_STEP
+                if not has_required_indent_level(line, indent_level):
+                    yield self.handle_line_indent_issue(
+                        file, filename, line, line_number, indent_level, match)
+                return
+
+            # Maintain the appropriate indentation level for the lines which
+            # start with the tags `else` and `elif`
+            # When encountered with 'elif' or 'else', decrease their
+            # indentation by indent_level to keep them on the same level with
+            # the outer conditional label
+            if label in ['elif', 'else']:
+                """
+                if len(self.label_stack) != 0:
+                    indent_level = self.indent_level
+                else:
+                    indent_level = self.indent_level - self.INDENT_STEP
+                """
+                indent_level = self.indent_level
+                if not has_required_indent_level(line, indent_level):
+                    yield self.handle_line_indent_issue(
+                        file, filename, line, line_number, indent_level, match)
+                return
+
+            # Check if the stack is empty. Empty stack means either it is the
+            # first line or the nesting of control tags has ended.
+            # Nesting of control tag ends when the starting control block
+            # finds the end control block.
+            # Append the new tag to the `label_stack`
+            if len(self.label_stack) == 0:
+                self.label_stack.append(label)
+                self.indent_level = 0
+                if not has_required_indent_level(line, self.indent_level):
+                    yield self.handle_line_indent_issue(
+                        file, filename, line, line_number, self.indent_level,
+                        match)
+                return
+
+            # Generate a end_tag for a partiular tag
+            expected_end_label = 'end' + self.label_stack[-1]
+
+            # If the starting tag(tag present in the stack) and the tag
+            # encountered are not equal then increase the indentation level
+            # and append the tag into the `label_stack`
+            if label != expected_end_label:
+                self.label_stack.append(label)
+
+                indent(self)
+                indent_level = self.indent_level
+
+                if not has_required_indent_level(line, indent_level):
+                    yield self.handle_line_indent_issue(
+                        file, filename, line, line_number, indent_level, match)
+
+            # If the starting tag(tag present in the stack) and the tag
+            # encountered are equal then print the line at the current
+            # indentation level and then decrease the identation level
+            if label == expected_end_label:
+
+                self.label_stack.pop()
+
+                indent_level = self.indent_level
+                dedent(self)
+
+                if not has_required_indent_level(line, indent_level):
+                    yield self.handle_line_indent_issue(
+                        file, filename, line, line_number, indent_level, match)
 
     def check_for_variable_spacing_issues(self,
                                           file,
@@ -361,6 +559,8 @@ class Jinja2Bear(LocalBear):
             statement_spacing: int = 1,
             control_spacing: int = 1,
             check_end_labels: bool = True,
+            indentation: int = 2,
+            check_indentation: bool = False,
             ):
         """
         Check `Jinja2 templates <http://jinja.pocoo.org>`_ for syntax,
@@ -406,15 +606,18 @@ class Jinja2Bear(LocalBear):
         :param control_spacing:
             The number of spaces a control block should be spaced with.
             Default is 1.
+        :param indentation:
+            The number of spaces a line should be spaced with.
+            Default is 4
         """
 
         # Whenever a control construct starts a tuple of the
         # expected end label and line number are put on this stack.
         # Whenever an end tag is encountered the last item added is popped.
         self.control_stack = []
+        self.INDENT_STEP = indentation
 
         for line_number, line in enumerate(file, start=1):
-
             yield from self.check_for_variable_spacing_issues(
                 file, filename, line, line_number, variable_spacing)
 
@@ -426,8 +629,11 @@ class Jinja2Bear(LocalBear):
 
             yield from self.check_control_end_tags(
                 file, filename, line, line_number, control_spacing,
-                check_end_labels,
+                check_end_labels
             )
+
+            yield from self.check_indentation_line(
+                file, filename, line, line_number, check_indentation)
 
         # We've reached the end of the file.
         # Check if all control blocks have been closed
