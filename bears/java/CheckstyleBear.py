@@ -86,6 +86,14 @@ class CheckstyleBear:
               <https://github.com/noveogroup/android-check>.
             - geosoft - The Java style followed by GeoSoft. More info at
               <http://geosoft.no/development/javastyle.html>
+        :param use_spaces:
+            If checkstyle_configs = Google, indentation checking using 2 spaces,
+            according to https://google.github.io/styleguide/javaguide.html#s4.2-block-indentation,
+            hence a 'True' value
+        :param indent_size:
+            If checkstyle_configs = Google, indentation checking using 2 spaces,
+            according to https://google.github.io/styleguide/javaguide.html#s4.2-block-indentation
+            
         """
         check_invalid_configuration(
             checkstyle_configs, use_spaces, indent_size)
