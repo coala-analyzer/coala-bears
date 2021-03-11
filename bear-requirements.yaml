@@ -52,6 +52,8 @@ pip_requirements:
     version: ~=4.1
   nltk:
     version: ~=3.2
+  pip-tools:
+    version: ~=3.8.0
   proselint:
     version: ~=0.7.0
   pycodestyle:
