@@ -11,7 +11,7 @@ set -x
 # Many bear dependencies do not install on unsupported versions
 echo "" > bear-requirements.txt
 
-pip install 'pip==9.0.1' 'setuptools==21.2.2'
+pip install 'pip==9.0.3' 'setuptools==21.2.2'
 
 python setup.py install 2>&1 | tee setup.log
 
