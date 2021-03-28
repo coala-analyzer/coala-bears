@@ -197,7 +197,7 @@ jobs:
       before_script: true
       script: .ci/check_unsupported.sh
 
-    - python: 3.6
+    - python: 3.6.9
       stage: sentinel
       before_install: []
       install: pip install moban~=0.5.0 gitfs2 pypifs
