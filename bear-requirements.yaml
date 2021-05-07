@@ -234,6 +234,9 @@ r_script_requirements:
   lintr:
     version: '>=1.0.2'
 distro_requirements:
+  ameba:
+    packages:
+      brew: ameba
   astyle:
     packages:
       apt_get: astyle

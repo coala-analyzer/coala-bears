@@ -532,6 +532,24 @@ bear_metadata:
       - coffeelint
       - exe
       - npm
+  CrystalLintBear:
+    name: CrystalLintBear
+    subdir: crystal
+    filename: CrystalLintBear.py
+    requirements:
+      exe:
+        ameba:
+      distro:
+        ameba:
+          packages:
+            brew: ameba
+    languages:
+      - Crystal
+    tags:
+      - ameba
+      - brew
+      - crystal
+      - exe
   DartLintBear:
     name: DartLintBear
     subdir: dart

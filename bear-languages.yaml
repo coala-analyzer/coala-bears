@@ -104,6 +104,8 @@ ClangFunctionDifferenceBear:
   - OpenMP
 CoffeeLintBear:
   - CoffeeScript
+CrystalLintBear:
+  - Crystal
 DartLintBear:
   - Dart
 DennisBear:
